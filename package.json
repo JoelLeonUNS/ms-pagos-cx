@@ -1,0 +1,14 @@
+{
+  "name": "ms-pagos-cx",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "express": "^4.19.2",
+    "mercadopago": "^1.5.14",
+    "mysql2": "^3.9.2"
+  }
+}
