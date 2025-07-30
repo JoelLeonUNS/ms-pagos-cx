@@ -11,16 +11,16 @@ mercadopago.configure({
 async function recibirWebhook(req, res) {
   console.log("🔔 Webhook recibido:", JSON.stringify(req.body, null, 2));
   try {
-    const paymentId = req.body?.data?.id;
-    const plan_id = pago.metadata?.plan_id || null;
-
+    const paymentId = req.body?.data?.id || req.body?.resource;
+    
     if (!paymentId) {
       return res.status(400).json({ error: 'ID de pago no recibido' });
     }
-
+    
     // Consultar detalles del pago a MercadoPago
     const response = await mercadopago.payment.findById(paymentId);
     const pago = response.body;
+    const plan_id = pago.metadata?.plan_id || null;
 
     // Extraer datos clave
     const {
