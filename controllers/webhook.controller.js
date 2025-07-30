@@ -9,8 +9,10 @@ mercadopago.configure({
 });
 
 async function recibirWebhook(req, res) {
+  console.log("🔔 Webhook recibido:", JSON.stringify(req.body, null, 2));
   try {
     const paymentId = req.body?.data?.id;
+    const plan_id = pago.metadata?.plan_id || null;
 
     if (!paymentId) {
       return res.status(400).json({ error: 'ID de pago no recibido' });
@@ -36,7 +38,7 @@ async function recibirWebhook(req, res) {
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `, [
       external_reference,   // usuario_id (lo que tú enviaste como string)
-      "desconocido",        // plan_id (opcional, no se devuelve por ahora)
+      plan_id,              // plan_id (opcional, no se devuelve por ahora)
       transaction_amount,
       currency_id || 'PEN',
       status,

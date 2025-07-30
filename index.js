@@ -4,7 +4,7 @@ require('dotenv').config();
 
 app.use(express.json());
 
-const pagosRoutes = require('./routes/mercadopago');
+const pagosRoutes = require('./routes/pagos');
 app.use('/', pagosRoutes);
 
 const mercadoPagoRoutes = require('./routes/mercadopago');
