@@ -1,4 +1,5 @@
 const Suscripcion = require('../models/Suscripcion');
+const SuscripcionService = require('../services/SuscripcionService');
 
 class SuscripcionController {
   static async getAll(req, res) {
@@ -246,17 +247,83 @@ class SuscripcionController {
 
   static async checkExpiredSuscriptions(req, res) {
     try {
-      const affectedRows = await Suscripcion.checkExpiredSuscriptions();
+      const resultado = await SuscripcionService.procesarVencimientos();
       
       res.json({
         success: true,
-        message: `Se actualizaron ${affectedRows} suscripciones vencidas`,
-        data: { affectedRows }
+        message: resultado.message,
+        data: resultado
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: 'Error al verificar suscripciones vencidas',
+        error: error.message
+      });
+    }
+  }
+
+  static async getResumenUsuario(req, res) {
+    try {
+      const { usuarioId } = req.params;
+      const resumen = await SuscripcionService.getResumenUsuario(usuarioId);
+      
+      res.json({
+        success: true,
+        data: resumen
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener resumen del usuario',
+        error: error.message
+      });
+    }
+  }
+
+  static async renovarSuscripcion(req, res) {
+    try {
+      const { id } = req.params;
+      await SuscripcionService.renovarSuscripcion(id);
+      const suscripcionActualizada = await Suscripcion.getById(id);
+      
+      res.json({
+        success: true,
+        message: 'Suscripción renovada exitosamente',
+        data: suscripcionActualizada
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error al renovar la suscripción',
+        error: error.message
+      });
+    }
+  }
+
+  static async cancelarRenovacion(req, res) {
+    try {
+      const { id } = req.params;
+      const updated = await Suscripcion.update(id, { renovacion_automatica: false });
+      
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: 'Suscripción no encontrada'
+        });
+      }
+
+      const suscripcionActualizada = await Suscripcion.getById(id);
+      
+      res.json({
+        success: true,
+        message: 'Renovación automática cancelada',
+        data: suscripcionActualizada
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error al cancelar la renovación automática',
         error: error.message
       });
     }

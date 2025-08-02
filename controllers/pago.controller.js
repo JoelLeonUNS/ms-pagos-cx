@@ -1,4 +1,5 @@
 const Pago = require('../models/Pago');
+const SuscripcionService = require('../services/SuscripcionService');
 
 class PagoController {
   static async getAll(req, res) {
@@ -180,6 +181,17 @@ class PagoController {
       }
 
       const pagoActualizado = await Pago.getById(id);
+
+      // Si el pago fue aprobado, procesar la suscripción automáticamente
+      if (estado === 'approved') {
+        try {
+          await SuscripcionService.procesarPagoAprobado(id);
+          console.log(`Suscripción procesada automáticamente para pago ${id}`);
+        } catch (error) {
+          console.error('Error al procesar suscripción:', error.message);
+          // No fallar la respuesta si hay error en la suscripción
+        }
+      }
 
       res.json({
         success: true,

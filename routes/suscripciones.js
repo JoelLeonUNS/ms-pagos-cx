@@ -26,7 +26,16 @@ router.patch('/suscripciones/:id/estado', SuscripcionController.updateEstado);
 // Eliminar suscripción
 router.delete('/suscripciones/:id', SuscripcionController.delete);
 
-// Verificar y actualizar suscripciones vencidas
+// Verificar y actualizar suscripciones vencidas (incluye renovaciones automáticas)
 router.post('/suscripciones/check-expired', SuscripcionController.checkExpiredSuscriptions);
+
+// Obtener resumen completo de suscripciones y pagos por usuario
+router.get('/suscripciones/usuario/:usuarioId/resumen', SuscripcionController.getResumenUsuario);
+
+// Renovar manualmente una suscripción
+router.post('/suscripciones/:id/renovar', SuscripcionController.renovarSuscripcion);
+
+// Cancelar renovación automática
+router.patch('/suscripciones/:id/cancelar-renovacion', SuscripcionController.cancelarRenovacion);
 
 module.exports = router;

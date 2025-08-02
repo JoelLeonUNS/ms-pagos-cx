@@ -3,6 +3,9 @@ const cors = require('cors');
 const app = express();
 require('dotenv').config();
 
+// Importar trabajos programados
+const CronJobs = require('./jobs/CronJobs');
+
 app.use(cors());
 app.use(express.json());
 
@@ -92,4 +95,7 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('- CRUD /api/suscripciones - Gestión de suscripciones');
   console.log('- /api/mercadopago - Integración MercadoPago');
   console.log('- /api/webhook - Webhooks');
+  
+  // Iniciar trabajos programados
+  CronJobs.iniciarCronJobs();
 });

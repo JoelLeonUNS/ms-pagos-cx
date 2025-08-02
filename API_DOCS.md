@@ -52,11 +52,14 @@
 - **GET** `/api/suscripciones/:id` - Obtener suscripción por ID
 - **GET** `/api/suscripciones/usuario/:usuarioId` - Obtener suscripciones por usuario
 - **GET** `/api/suscripciones/usuario/:usuarioId/activa` - Obtener suscripción activa por usuario
+- **GET** `/api/suscripciones/usuario/:usuarioId/resumen` - Resumen completo del usuario
 - **POST** `/api/suscripciones` - Crear nueva suscripción
 - **PUT** `/api/suscripciones/:id` - Actualizar suscripción
 - **PATCH** `/api/suscripciones/:id/estado` - Actualizar estado de suscripción
 - **DELETE** `/api/suscripciones/:id` - Eliminar suscripción
-- **POST** `/api/suscripciones/check-expired` - Verificar suscripciones vencidas
+- **POST** `/api/suscripciones/check-expired` - Verificar suscripciones vencidas y renovar automáticamente
+- **POST** `/api/suscripciones/:id/renovar` - Renovar manualmente una suscripción
+- **PATCH** `/api/suscripciones/:id/cancelar-renovacion` - Cancelar renovación automática
 
 #### Estructura Suscripción:
 ```json
@@ -86,7 +89,59 @@ Todas las respuestas siguen el formato:
 }
 ```
 
-## Códigos de Estado
+## Lógica Automática de Suscripciones
+
+### 🔄 Flujo Automático
+
+1. **Pago Aprobado → Suscripción Activa**
+   - Cuando un pago cambia a estado "approved", automáticamente se crea/renueva la suscripción
+   - Se calcula la fecha de vencimiento según el plan (mensual/anual)
+
+2. **Verificación de Vencimientos**
+   - Cada hora se ejecuta automáticamente
+   - Marca como "vencida" las suscripciones que pasaron su fecha
+   - Identifica suscripciones para renovación automática (3 días antes del vencimiento)
+
+3. **Renovación Automática**
+   - Para suscripciones con `renovacion_automatica = true`
+   - Crea automáticamente un nuevo pago
+   - Extiende la fecha de vencimiento
+
+### 🎯 Endpoints de Automatización
+
+```bash
+# Verificar vencimientos y procesar renovaciones
+POST /api/suscripciones/check-expired
+
+# Obtener resumen completo de usuario
+GET /api/suscripciones/usuario/123/resumen
+
+# Renovar manualmente una suscripción
+POST /api/suscripciones/456/renovar
+
+# Cancelar renovación automática
+PATCH /api/suscripciones/456/cancelar-renovacion
+```
+
+### 📊 Respuesta del Resumen de Usuario
+
+```json
+{
+  "success": true,
+  "data": {
+    "suscripcion_activa": {
+      "id": 1,
+      "plan_nombre": "Plan Standard",
+      "fecha_fin": "2025-09-02",
+      "renovacion_automatica": true
+    },
+    "tiene_suscripcion_activa": true,
+    "dias_restantes": 31,
+    "historial_suscripciones": [...],
+    "historial_pagos": [...]
+  }
+}
+```
 
 - **200** - OK
 - **201** - Creado
