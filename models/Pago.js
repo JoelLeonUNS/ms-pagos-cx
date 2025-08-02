@@ -32,6 +32,16 @@ class Pago {
     return rows;
   }
 
+  static async getByReferenciaExt(referenciaExt) {
+    const [rows] = await db.execute(`
+      SELECT p.*, pl.nombre as plan_nombre 
+      FROM pagos p 
+      LEFT JOIN planes pl ON p.plan_id = pl.id 
+      WHERE p.referencia_ext = ?
+    `, [referenciaExt]);
+    return rows[0];
+  }
+
   static async create(pagoData) {
     const { usuario_id, plan_id, monto, moneda, estado, metodo_pago, referencia_ext } = pagoData;
     const [result] = await db.execute(
