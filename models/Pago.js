@@ -36,7 +36,15 @@ class Pago {
     const { usuario_id, plan_id, monto, moneda, estado, metodo_pago, referencia_ext } = pagoData;
     const [result] = await db.execute(
       'INSERT INTO pagos (usuario_id, plan_id, monto, moneda, estado, metodo_pago, referencia_ext) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [usuario_id, plan_id, monto, moneda || 'PEN', estado, metodo_pago, referencia_ext]
+      [
+        usuario_id, 
+        plan_id, 
+        monto, 
+        moneda || 'PEN', 
+        estado, 
+        metodo_pago || null, 
+        referencia_ext || null
+      ]
     );
     return result.insertId;
   }
@@ -45,7 +53,16 @@ class Pago {
     const { usuario_id, plan_id, monto, moneda, estado, metodo_pago, referencia_ext } = pagoData;
     const [result] = await db.execute(
       'UPDATE pagos SET usuario_id = ?, plan_id = ?, monto = ?, moneda = ?, estado = ?, metodo_pago = ?, referencia_ext = ? WHERE id = ?',
-      [usuario_id, plan_id, monto, moneda, estado, metodo_pago, referencia_ext, id]
+      [
+        usuario_id, 
+        plan_id, 
+        monto, 
+        moneda, 
+        estado, 
+        metodo_pago || null, 
+        referencia_ext || null, 
+        id
+      ]
     );
     return result.affectedRows > 0;
   }

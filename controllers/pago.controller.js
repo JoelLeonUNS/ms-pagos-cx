@@ -242,6 +242,28 @@ class PagoController {
       });
     }
   }
+
+  // Endpoint de prueba para procesar suscripción manualmente
+  static async procesarSuscripcionManual(req, res) {
+    try {
+      const { id } = req.params;
+      
+      console.log(`🧪 Test: Procesando suscripción manual para pago ${id}`);
+      
+      await SuscripcionService.procesarPagoAprobado(id);
+      
+      res.json({
+        success: true,
+        message: `Suscripción procesada manualmente para pago ${id}`
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: 'Error al procesar suscripción manual',
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = PagoController;

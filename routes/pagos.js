@@ -23,4 +23,7 @@ router.patch('/pagos/:id/estado', PagoController.updateEstado);
 // Eliminar pago
 router.delete('/pagos/:id', PagoController.delete);
 
+// Endpoint de prueba para procesar suscripción manualmente
+router.post('/pagos/:id/procesar-suscripcion', PagoController.procesarSuscripcionManual);
+
 module.exports = router;

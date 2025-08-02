@@ -7,32 +7,51 @@ class SuscripcionService {
   // Procesar pago aprobado y crear/renovar suscripción
   static async procesarPagoAprobado(pagoId) {
     try {
+      console.log(`🔄 Procesando pago aprobado: ${pagoId}`);
+      
       const pago = await Pago.getById(pagoId);
       
       if (!pago) {
         throw new Error('Pago no encontrado');
       }
 
+      console.log(`📄 Pago encontrado:`, {
+        id: pago.id,
+        usuario_id: pago.usuario_id,
+        plan_id: pago.plan_id,
+        estado: pago.estado,
+        monto: pago.monto
+      });
+
       if (pago.estado !== 'approved') {
         throw new Error('El pago no está aprobado');
       }
 
-      // Verificar si el usuario ya tiene una suscripción activa para este plan
+      // Verificar si el usuario ya tiene una suscripción activa
       const suscripcionActiva = await Suscripcion.getActiveByUsuario(pago.usuario_id);
       
+      console.log(`🔍 Suscripción activa existente:`, suscripcionActiva || 'Ninguna');
+      
       if (suscripcionActiva && suscripcionActiva.plan_id === pago.plan_id) {
-        // Renovar suscripción existente
+        // Renovar suscripción existente del mismo plan
+        console.log(`🔄 Renovando suscripción existente del mismo plan`);
         await this.renovarSuscripcion(suscripcionActiva.id);
-        console.log(`Suscripción renovada para usuario ${pago.usuario_id}`);
+        console.log(`✅ Suscripción renovada para usuario ${pago.usuario_id}, plan ${pago.plan_id}`);
       } else {
-        // Crear nueva suscripción
+        // Crear nueva suscripción (usuario sin suscripción o cambiando de plan)
+        console.log(`🆕 Creando nueva suscripción`);
         const suscripcionId = await Suscripcion.createFromPayment(pago.usuario_id, pago.plan_id);
-        console.log(`Nueva suscripción creada para usuario ${pago.usuario_id}: ${suscripcionId}`);
+        console.log(`✅ Nueva suscripción creada para usuario ${pago.usuario_id}: ${suscripcionId}, plan ${pago.plan_id}`);
+        
+        // Si tenía una suscripción de otro plan, la anterior se cancela automáticamente en createFromPayment
+        if (suscripcionActiva && suscripcionActiva.plan_id !== pago.plan_id) {
+          console.log(`♻️ Suscripción anterior cancelada (plan ${suscripcionActiva.plan_id} → plan ${pago.plan_id})`);
+        }
       }
 
       return true;
     } catch (error) {
-      console.error('Error al procesar pago aprobado:', error.message);
+      console.error('❌ Error al procesar pago aprobado:', error.message);
       throw error;
     }
   }
