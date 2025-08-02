@@ -35,7 +35,7 @@ router.get('/suscripciones/usuario/:usuarioId/resumen', SuscripcionController.ge
 // Renovar manualmente una suscripción
 router.post('/suscripciones/:id/renovar', SuscripcionController.renovarSuscripcion);
 
-// Cancelar renovación automática
-router.patch('/suscripciones/:id/cancelar-renovacion', SuscripcionController.cancelarRenovacion);
+// Cambiar configuración de renovación automática (activar/desactivar)
+router.patch('/suscripciones/:id/renovacion-automatica', SuscripcionController.cambiarRenovacionAutomatica);
 
 module.exports = router;

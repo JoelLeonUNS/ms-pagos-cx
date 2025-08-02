@@ -55,11 +55,11 @@
 - **GET** `/api/suscripciones/usuario/:usuarioId/resumen` - Resumen completo del usuario
 - **POST** `/api/suscripciones` - Crear nueva suscripción
 - **PUT** `/api/suscripciones/:id` - Actualizar suscripción
-- **PATCH** `/api/suscripciones/:id/estado` - Actualizar estado de suscripción
+- **PATCH** `/api/suscripciones/:id/estado` - Cambiar estado de suscripción (activa/vencida/cancelada)
 - **DELETE** `/api/suscripciones/:id` - Eliminar suscripción
 - **POST** `/api/suscripciones/check-expired` - Verificar suscripciones vencidas y renovar automáticamente
 - **POST** `/api/suscripciones/:id/renovar` - Renovar manualmente una suscripción
-- **PATCH** `/api/suscripciones/:id/cancelar-renovacion` - Cancelar renovación automática
+- **PATCH** `/api/suscripciones/:id/renovacion-automatica` - Cambiar configuración de renovación automática (activar/desactivar)
 
 #### Estructura Suscripción:
 ```json
@@ -119,8 +119,8 @@ GET /api/suscripciones/usuario/123/resumen
 # Renovar manualmente una suscripción
 POST /api/suscripciones/456/renovar
 
-# Cancelar renovación automática
-PATCH /api/suscripciones/456/cancelar-renovacion
+# Cambiar configuración de renovación automática (activar/desactivar)
+PATCH /api/suscripciones/456/renovacion-automatica
 ```
 
 ### 📊 Respuesta del Resumen de Usuario
@@ -191,3 +191,74 @@ Content-Type: application/json
   "renovacion_automatica": true
 }
 ```
+
+### Cambiar Estado de Suscripción
+```bash
+# Marcar suscripción como vencida
+PATCH /api/suscripciones/1/estado
+Content-Type: application/json
+
+{
+  "estado": "vencida"
+}
+
+# Reactivar suscripción
+PATCH /api/suscripciones/1/estado
+Content-Type: application/json
+
+{
+  "estado": "activa"
+}
+
+# Cancelar suscripción
+PATCH /api/suscripciones/1/estado
+Content-Type: application/json
+
+{
+  "estado": "cancelada"
+}
+```
+
+### Cambiar Renovación Automática
+```bash
+# Desactivar renovación automática
+PATCH /api/suscripciones/1/renovacion-automatica
+Content-Type: application/json
+
+{
+  "renovacion_automatica": false
+}
+
+# Activar renovación automática
+PATCH /api/suscripciones/1/renovacion-automatica
+Content-Type: application/json
+
+{
+  "renovacion_automatica": true
+}
+```
+
+## 📋 Changelog API
+
+### v1.1.0 - Optimización de Rutas (2025-08-02)
+
+#### ✅ Cambios Realizados:
+- **Eliminadas rutas duplicadas** para una API más limpia
+- **Unificado endpoint de renovación automática** en `/renovacion-automatica`
+- **Removidos endpoints de testing** de producción
+
+#### 🗑️ Endpoints Eliminados:
+- `PATCH /api/suscripciones/:id/cancelar-renovacion` ➜ **Reemplazado por** `/renovacion-automatica` con `{"renovacion_automatica": false}`
+- `POST /api/pagos/:id/procesar-suscripcion` ➜ **Removido** (endpoint de testing)
+
+#### 🎯 Total de Endpoints:
+- **Antes:** 30 rutas
+- **Después:** 26 rutas optimizadas
+- **Mejora:** API más limpia y mantenible
+
+#### 💡 Uso Recomendado:
+Para cambiar la configuración de renovación automática, usar únicamente:
+```bash
+PATCH /api/suscripciones/:id/renovacion-automatica
+```
+Con el body apropiado para activar (`true`) o desactivar (`false`).

@@ -1,5 +1,6 @@
 const Suscripcion = require('../models/Suscripcion');
 const SuscripcionService = require('../services/SuscripcionService');
+const db = require('../db');
 
 class SuscripcionController {
   static async getAll(req, res) {
@@ -301,29 +302,56 @@ class SuscripcionController {
     }
   }
 
-  static async cancelarRenovacion(req, res) {
+  static async cambiarRenovacionAutomatica(req, res) {
     try {
       const { id } = req.params;
-      const updated = await Suscripcion.update(id, { renovacion_automatica: false });
-      
-      if (!updated) {
+      const { renovacion_automatica } = req.body;
+
+      // Validar que se proporcione el valor booleano
+      if (typeof renovacion_automatica !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: 'El campo renovacion_automatica debe ser true o false'
+        });
+      }
+
+      // Obtener la suscripción actual para validar que existe
+      const suscripcionActual = await Suscripcion.getById(id);
+      if (!suscripcionActual) {
         return res.status(404).json({
           success: false,
           message: 'Suscripción no encontrada'
         });
       }
 
+      // Actualizar solo la renovación automática
+      const [result] = await db.execute(
+        'UPDATE suscripciones SET renovacion_automatica = ? WHERE id = ?',
+        [renovacion_automatica, id]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          success: false,
+          message: 'No se pudo actualizar la suscripción'
+        });
+      }
+
       const suscripcionActualizada = await Suscripcion.getById(id);
       
+      const mensaje = renovacion_automatica 
+        ? 'Renovación automática activada' 
+        : 'Renovación automática desactivada';
+
       res.json({
         success: true,
-        message: 'Renovación automática cancelada',
+        message: mensaje,
         data: suscripcionActualizada
       });
     } catch (error) {
       res.status(500).json({
         success: false,
-        message: 'Error al cancelar la renovación automática',
+        message: 'Error al cambiar la configuración de renovación automática',
         error: error.message
       });
     }
