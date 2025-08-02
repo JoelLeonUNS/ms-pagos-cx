@@ -92,6 +92,17 @@ class PagoController {
       
       const nuevoPago = await Pago.getById(pagoId);
 
+      // Si el pago se crea directamente como "approved", procesar suscripción
+      if (estado === 'approved') {
+        try {
+          await SuscripcionService.procesarPagoAprobado(pagoId);
+          console.log(`Nueva suscripción creada automáticamente para pago ${pagoId}`);
+        } catch (error) {
+          console.error('Error al procesar suscripción:', error.message);
+          // No fallar la respuesta si hay error en la suscripción
+        }
+      }
+
       res.status(201).json({
         success: true,
         message: 'Pago creado exitosamente',
