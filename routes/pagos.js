@@ -1,45 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../db');
+const PagoController = require('../controllers/pago.controller');
 
-// GET /planes
-router.get('/planes', async (req, res) => {
-  const [rows] = await db.query('SELECT * FROM planes');
-  res.json(rows);
-});
+// Obtener todos los pagos
+router.get('/pagos', PagoController.getAll);
 
-// POST /pago
-router.post('/pago', async (req, res) => {
-  const { usuario_id, plan_id, monto, estado, metodo_pago, referencia_ext } = req.body;
+// Obtener pago por ID
+router.get('/pagos/:id', PagoController.getById);
 
-  if (!usuario_id || !plan_id || !monto || !estado) {
-    return res.status(400).json({ error: 'Datos incompletos' });
-  }
+// Obtener pagos por usuario
+router.get('/pagos/usuario/:usuarioId', PagoController.getByUsuario);
 
-  try {
-    const [result] = await db.query(`
-      INSERT INTO pagos (usuario_id, plan_id, monto, estado, metodo_pago, referencia_ext)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `, [usuario_id, plan_id, monto, estado, metodo_pago || null, referencia_ext || null]);
+// Crear nuevo pago
+router.post('/pagos', PagoController.create);
 
-    res.status(201).json({ id: result.insertId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error al registrar pago' });
-  }
-});
+// Actualizar pago
+router.put('/pagos/:id', PagoController.update);
 
-// GET /pagos/:usuarioId
-router.get('/pagos/:usuarioId', async (req, res) => {
-  const { usuarioId } = req.params;
+// Actualizar solo el estado del pago
+router.patch('/pagos/:id/estado', PagoController.updateEstado);
 
-  const [rows] = await db.query(`
-    SELECT * FROM pagos
-    WHERE usuario_id = ?
-    ORDER BY fecha_pago DESC
-  `, [usuarioId]);
-
-  res.json(rows);
-});
+// Eliminar pago
+router.delete('/pagos/:id', PagoController.delete);
 
 module.exports = router;
