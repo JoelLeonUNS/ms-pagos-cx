@@ -28,7 +28,7 @@ async function generarPreferencia(req, res) {
       pending: 'https://tuapp.com/pending'
     },
     auto_return: 'approved',
-    notification_url: 'http://34.173.216.37:3000/webhook',
+    notification_url: 'http://34.173.216.37:3000/api/webhook',
     metadata: {
       plan_id,          // 👈 Aquí va el plan_id real
       usuario_id        // (opcional) también puedes duplicarlo aquí
