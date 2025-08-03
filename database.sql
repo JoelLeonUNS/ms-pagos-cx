@@ -2,13 +2,6 @@
 CREATE DATABASE IF NOT EXISTS bd_cx_ms_pagos DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE bd_cx_ms_pagos;
 
--- Verificar versión de MySQL para compatibilidad con JSON
-SET @mysql_version = CAST(SUBSTRING_INDEX(VERSION(), '.', 2) AS DECIMAL(3,1));
-SELECT CASE 
-  WHEN @mysql_version >= 5.7 THEN 'MySQL version compatible with JSON functions'
-  ELSE 'WARNING: MySQL version may not support JSON functions'
-END as version_check;
-
 -- Tabla: planes
 CREATE TABLE IF NOT EXISTS planes (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -31,9 +24,6 @@ INSERT INTO planes (nombre, precio, frecuencia, descripcion, beneficios, cant_us
   ('Plan Enterprise',99.90, 'mensual',  'Para organizaciones grandes', 
    JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático'), -1);
 
--- Migración para bases de datos existentes: Agregar columnas beneficios y cant_usuarios
-ALTER TABLE planes ADD COLUMN IF NOT EXISTS beneficios JSON AFTER descripcion;
-ALTER TABLE planes ADD COLUMN IF NOT EXISTS cant_usuarios INT DEFAULT 1 AFTER beneficios;
 
 -- Actualizar planes existentes con beneficios y límites por defecto (solo si no tienen beneficios)
 UPDATE planes SET 
@@ -92,34 +82,6 @@ CREATE TABLE IF NOT EXISTS suscripciones (
   CONSTRAINT check_fechas CHECK (fecha_fin > fecha_inicio)
 );
 
--- Agregar índice único para una sola suscripción activa por usuario
--- Para MySQL 8.0+: CREATE UNIQUE INDEX idx_usuario_activa ON suscripciones (usuario_id) WHERE estado = 'activa';
--- Para compatibilidad con versiones anteriores, usar un trigger:
-
-DELIMITER $$
-CREATE TRIGGER tr_check_suscripcion_activa_unica
-  BEFORE INSERT ON suscripciones
-  FOR EACH ROW
-BEGIN
-  IF NEW.estado = 'activa' THEN
-    IF EXISTS (SELECT 1 FROM suscripciones WHERE usuario_id = NEW.usuario_id AND estado = 'activa') THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario ya tiene una suscripción activa';
-    END IF;
-  END IF;
-END$$
-
-CREATE TRIGGER tr_check_suscripcion_activa_unica_update
-  BEFORE UPDATE ON suscripciones
-  FOR EACH ROW
-BEGIN
-  IF NEW.estado = 'activa' AND OLD.estado != 'activa' THEN
-    IF EXISTS (SELECT 1 FROM suscripciones WHERE usuario_id = NEW.usuario_id AND estado = 'activa' AND id != NEW.id) THEN
-      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario ya tiene una suscripción activa';
-    END IF;
-  END IF;
-END$$
-DELIMITER ;
-
 -- Vistas útiles
 CREATE OR REPLACE VIEW vista_suscripciones_activas AS
 SELECT 
@@ -150,6 +112,6 @@ SELECT
   p.referencia_ext,
   p.fecha_pago,
   MONTHNAME(p.fecha_pago) as mes_pago,
-  YEAR(p.fecha_pago) as año_pago
+  YEAR(p.fecha_pago) as anio_pago
 FROM pagos p
 JOIN planes pl ON p.plan_id = pl.id;
