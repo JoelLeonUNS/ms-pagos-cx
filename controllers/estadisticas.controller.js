@@ -261,6 +261,7 @@ class EstadisticasController {
           pl.nombre as plan_nombre,
           pl.precio as plan_precio,
           pl.frecuencia as plan_frecuencia,
+          pl.cant_usuarios as plan_cant_usuarios,
           COUNT(p.id) as total_pagos,
           COUNT(CASE WHEN p.estado = 'approved' THEN 1 END) as pagos_aprobados,
           COUNT(CASE WHEN p.estado = 'pending' THEN 1 END) as pagos_pendientes,
@@ -272,7 +273,7 @@ class EstadisticasController {
           MAX(p.fecha_pago) as ultima_venta
         FROM planes pl
         LEFT JOIN pagos p ON pl.id = p.plan_id
-        GROUP BY pl.id, pl.nombre, pl.precio, pl.frecuencia
+        GROUP BY pl.id, pl.nombre, pl.precio, pl.frecuencia, pl.cant_usuarios
         ORDER BY ingresos_totales DESC
       `);
 

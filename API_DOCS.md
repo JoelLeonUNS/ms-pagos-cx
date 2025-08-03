@@ -25,7 +25,8 @@
     "Soporte por email",
     "5 proyectos",
     "Almacenamiento 10GB"
-  ]
+  ],
+  "cant_usuarios": 1 // Número de usuarios permitidos, -1 para ilimitado
 }
 ```
 
@@ -164,6 +165,7 @@
         "plan_nombre": "Plan Standard",
         "plan_precio": 29.90,
         "plan_frecuencia": "mensual",
+        "plan_cant_usuarios": 1,
         "total_pagos": 50,
         "pagos_aprobados": 45,
         "pagos_pendientes": 3,
@@ -279,7 +281,8 @@ Content-Type: application/json
     "Almacenamiento 1TB",
     "API dedicada",
     "Backup automático"
-  ]
+  ],
+  "cant_usuarios": -1
 }
 ```
 
@@ -376,6 +379,48 @@ GET /api/estadisticas/ingresos/rango?fecha_inicio=2025-07-01&fecha_fin=2025-07-3
 ```
 
 ## 📋 Changelog API
+
+### v1.2.0 - Límites de Usuarios en Planes (2025-08-03)
+
+#### ✅ Nuevas Funcionalidades:
+- **Nueva columna `cant_usuarios`** en la tabla planes
+- **Límites de usuarios por plan** configurables
+- **Validación de límites** en creación y actualización de planes
+- **Estadísticas mejoradas** con información de límites de usuarios
+
+#### 🆕 Campo Agregado:
+- **`cant_usuarios`**: Número entero que define cuántos usuarios puede tener el plan
+  - Valores positivos (1, 5, 10, etc.): Límite específico de usuarios
+  - Valor -1: Usuarios ilimitados
+  - Valor por defecto: 1
+
+#### 📊 Ejemplos de Configuración:
+```json
+{
+  "nombre": "Plan Standard",
+  "cant_usuarios": 1,
+  "descripcion": "Para uso individual"
+}
+
+{
+  "nombre": "Plan Business", 
+  "cant_usuarios": 10,
+  "descripcion": "Para equipos pequeños"
+}
+
+{
+  "nombre": "Plan Enterprise",
+  "cant_usuarios": -1,
+  "descripcion": "Para organizaciones grandes (usuarios ilimitados)"
+}
+```
+
+#### 🔧 Archivos Modificados:
+- `models/Plan.js` - Soporte para cant_usuarios
+- `controllers/plan.controller.js` - Validación de límites
+- `controllers/estadisticas.controller.js` - Incluye cant_usuarios en estadísticas
+- `database.sql` - Esquema actualizado con nueva columna
+- `migration_beneficios.sql` - Script de migración para bases existentes
 
 ### v1.1.0 - Optimización de Rutas (2025-08-02)
 

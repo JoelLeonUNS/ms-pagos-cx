@@ -3,7 +3,7 @@ const db = require('../db');
 class Suscripcion {
   static async getAll() {
     const [rows] = await db.execute(`
-      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia 
+      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia, pl.cant_usuarios 
       FROM suscripciones s 
       LEFT JOIN planes pl ON s.plan_id = pl.id 
       ORDER BY s.fecha_inicio DESC
@@ -13,7 +13,7 @@ class Suscripcion {
 
   static async getById(id) {
     const [rows] = await db.execute(`
-      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia 
+      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia, pl.cant_usuarios 
       FROM suscripciones s 
       LEFT JOIN planes pl ON s.plan_id = pl.id 
       WHERE s.id = ?
@@ -23,7 +23,7 @@ class Suscripcion {
 
   static async getByUsuario(usuarioId) {
     const [rows] = await db.execute(`
-      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia 
+      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia, pl.cant_usuarios 
       FROM suscripciones s 
       LEFT JOIN planes pl ON s.plan_id = pl.id 
       WHERE s.usuario_id = ? 
@@ -34,7 +34,7 @@ class Suscripcion {
 
   static async getActiveByUsuario(usuarioId) {
     const [rows] = await db.execute(`
-      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia 
+      SELECT s.*, pl.nombre as plan_nombre, pl.precio, pl.frecuencia, pl.cant_usuarios 
       FROM suscripciones s 
       LEFT JOIN planes pl ON s.plan_id = pl.id 
       WHERE s.usuario_id = ? AND s.estado = 'activa'
@@ -140,7 +140,7 @@ class Suscripcion {
   // Obtener suscripciones que necesitan renovación automática
   static async getSuscripcionesParaRenovar() {
     const [rows] = await db.execute(`
-      SELECT s.*, p.nombre as plan_nombre, p.precio, p.frecuencia
+      SELECT s.*, p.nombre as plan_nombre, p.precio, p.frecuencia, p.cant_usuarios
       FROM suscripciones s
       JOIN planes p ON s.plan_id = p.id
       WHERE s.estado = 'activa' 
