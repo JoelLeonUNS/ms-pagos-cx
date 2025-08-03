@@ -67,7 +67,7 @@ class ReportesController {
             SUM(p.monto) as monto_total_transacciones,
             ROUND(AVG(CASE WHEN p.estado = 'approved' THEN p.monto END), 2) as ticket_promedio
           `;
-          groupByClause = 'GROUP BY DATE(p.fecha_pago) ORDER BY fecha DESC';
+          groupByClause = 'GROUP BY DATE(p.fecha_pago), DAYNAME(p.fecha_pago) ORDER BY fecha DESC';
           break;
 
         case 'plan':
@@ -94,8 +94,7 @@ class ReportesController {
             p.estado,
             COUNT(p.id) as total_transacciones,
             SUM(p.monto) as monto_total,
-            ROUND(AVG(p.monto), 2) as monto_promedio,
-            ROUND((COUNT(p.id) * 100.0 / (SELECT COUNT(*) FROM pagos WHERE ${whereClause})), 2) as porcentaje_total
+            ROUND(AVG(p.monto), 2) as monto_promedio
           `;
           groupByClause = 'GROUP BY p.estado ORDER BY total_transacciones DESC';
           break;
@@ -111,7 +110,7 @@ class ReportesController {
             ROUND(AVG(CASE WHEN p.estado = 'approved' THEN p.monto END), 2) as ticket_promedio,
             COUNT(DISTINCT p.usuario_id) as usuarios_unicos
           `;
-          groupByClause = 'GROUP BY YEAR(p.fecha_pago), MONTH(p.fecha_pago) ORDER BY año DESC, mes DESC';
+          groupByClause = 'GROUP BY YEAR(p.fecha_pago), MONTH(p.fecha_pago), MONTHNAME(p.fecha_pago) ORDER BY año DESC, mes DESC';
           break;
       }
 
@@ -225,83 +224,29 @@ class ReportesController {
   // Reporte detallado de transacciones (para exportar a Excel/CSV)
   static async getReporteTransacciones(req, res) {
     try {
-      const { 
-        fecha_inicio,
-        fecha_fin,
-        plan_id,
-        estado,
-        usuario_id,
-        limite = 1000
-      } = req.query;
-
-      let whereClause = '1=1';
-      let params = [];
-
-      // Filtros
-      if (fecha_inicio && fecha_fin) {
-        whereClause += ' AND DATE(p.fecha_pago) >= ? AND DATE(p.fecha_pago) <= ?';
-        params.push(fecha_inicio, fecha_fin);
-      }
-
-      if (plan_id) {
-        whereClause += ' AND p.plan_id = ?';
-        params.push(plan_id);
-      }
-
-      if (estado) {
-        whereClause += ' AND p.estado = ?';
-        params.push(estado);
-      }
-
-      if (usuario_id) {
-        whereClause += ' AND p.usuario_id = ?';
-        params.push(usuario_id);
-      }
-
       const [transacciones] = await db.execute(`
         SELECT 
           p.id as pago_id,
           p.usuario_id,
           p.plan_id,
           pl.nombre as plan_nombre,
-          pl.precio as plan_precio,
-          pl.frecuencia as plan_frecuencia,
           p.monto,
-          p.moneda,
           p.estado,
           p.metodo_pago,
-          p.referencia_ext,
-          DATE(p.fecha_pago) as fecha_pago,
-          TIME(p.fecha_pago) as hora_pago,
-          DAYNAME(p.fecha_pago) as dia_semana,
-          DATE(p.fecha_creacion) as fecha_creacion,
-          p.observaciones
+          DATE(p.fecha_pago) as fecha_pago
         FROM pagos p
         LEFT JOIN planes pl ON p.plan_id = pl.id
-        WHERE ${whereClause}
         ORDER BY p.fecha_pago DESC
-        LIMIT ?
-      `, [...params, parseInt(limite)]);
+        LIMIT 10
+      `);
 
       res.json({
         success: true,
         data: {
-          configuracion: {
-            filtros: {
-              fecha_inicio: fecha_inicio || null,
-              fecha_fin: fecha_fin || null,
-              plan_id: plan_id || null,
-              estado: estado || null,
-              usuario_id: usuario_id || null
-            },
-            limite_resultados: limite
-          },
           transacciones,
           total_transacciones: transacciones.length,
           headers_excel: [
-            'ID Pago', 'Usuario ID', 'Plan', 'Precio Plan', 'Frecuencia',
-            'Monto', 'Moneda', 'Estado', 'Método Pago', 'Referencia',
-            'Fecha Pago', 'Hora', 'Día Semana', 'Fecha Creación', 'Observaciones'
+            'ID Pago', 'Usuario ID', 'Plan', 'Monto', 'Estado', 'Método Pago', 'Fecha'
           ],
           fecha_generacion: new Date().toISOString()
         }

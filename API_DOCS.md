@@ -98,6 +98,277 @@
 - **GET** `/api/reportes/transacciones` - Listado detallado de transacciones para exportar
 - **GET** `/api/reportes/rendimiento-planes` - Análisis de rendimiento por planes
 
+#### Parámetros del Reporte de Ingresos:
+
+| Parámetro | Tipo | Valores | Descripción |
+|-----------|------|---------|-------------|
+| `formato` | string | `tabla`, `resumen`, `detallado` | Tipo de formato de salida (por defecto: `tabla`) |
+| `periodo` | string | `mes-actual`, `ultimos-3-meses`, `ultimos-6-meses`, `anual`, `personalizado` | Período de tiempo a consultar |
+| `agrupacion` | string | `fecha`, `plan`, `estado`, `mes` | Cómo agrupar los datos |
+| `fecha_inicio` | string | YYYY-MM-DD | Para período personalizado |
+| `fecha_fin` | string | YYYY-MM-DD | Para período personalizado |
+| `plan_id` | integer | ID del plan | Filtrar por plan específico |
+| `estado` | string | `pending`, `approved`, `rejected` | Filtrar por estado |
+
+#### Ejemplos de Uso del Reporte de Ingresos:
+
+```bash
+# Reporte por fecha del mes actual (configuración por defecto)
+GET /api/reportes/ingresos
+
+# Reporte por planes del último trimestre
+GET /api/reportes/ingresos?agrupacion=plan&periodo=ultimos-3-meses
+
+# Reporte mensual de todo el año
+GET /api/reportes/ingresos?agrupacion=mes&periodo=anual
+
+# Reporte por plan específico con rango personalizado
+GET /api/reportes/ingresos?agrupacion=fecha&periodo=personalizado&fecha_inicio=2025-07-01&fecha_fin=2025-07-31&plan_id=1
+
+# Reporte solo de pagos aprobados
+GET /api/reportes/ingresos?agrupacion=plan&estado=approved
+```
+
+#### Respuesta del Reporte de Ingresos (Agrupación por Fecha):
+```json
+{
+  "success": true,
+  "data": {
+    "configuracion": {
+      "formato": "tabla",
+      "periodo": "mes-actual",
+      "agrupacion": "fecha",
+      "filtros": {
+        "fecha_inicio": null,
+        "fecha_fin": null,
+        "plan_id": null,
+        "estado": null
+      }
+    },
+    "resumen_periodo": {
+      "total_transacciones_periodo": 1,
+      "total_pagos_aprobados": 1,
+      "total_pagos_pendientes": 0,
+      "total_pagos_rechazados": 0,
+      "ingresos_totales_periodo": "29.90",
+      "pendientes_totales_periodo": "0.00",
+      "ticket_promedio_periodo": "29.90",
+      "usuarios_unicos_periodo": 1
+    },
+    "filas": [
+      {
+        "fecha": "2025-08-02T05:00:00.000Z",
+        "dia_semana": "Saturday",
+        "total_transacciones": 1,
+        "pagos_aprobados": 1,
+        "pagos_pendientes": 0,
+        "pagos_rechazados": 0,
+        "ingresos_aprobados": "29.90",
+        "ingresos_pendientes": "0.00",
+        "monto_total_transacciones": "29.90",
+        "ticket_promedio": "29.90"
+      }
+    ],
+    "total_filas": 1,
+    "metadatos_tabla": {
+      "headers": [
+        { "key": "fecha", "label": "Fecha", "tipo": "date" },
+        { "key": "dia_semana", "label": "Día", "tipo": "string" },
+        { "key": "total_transacciones", "label": "Total Trans.", "tipo": "number" },
+        { "key": "pagos_aprobados", "label": "Aprobados", "tipo": "number" },
+        { "key": "pagos_pendientes", "label": "Pendientes", "tipo": "number" },
+        { "key": "pagos_rechazados", "label": "Rechazados", "tipo": "number" },
+        { "key": "ingresos_aprobados", "label": "Ingresos", "tipo": "currency" },
+        { "key": "ticket_promedio", "label": "Ticket Prom.", "tipo": "currency" }
+      ],
+      "total_columnas": 8,
+      "tipos_dato": ["string", "number", "currency", "date", "percentage"]
+    },
+    "fecha_generacion": "2025-08-03T23:41:47.258Z"
+  }
+}
+```
+
+#### Respuesta del Reporte de Ingresos (Agrupación por Plan):
+```json
+{
+  "success": true,
+  "data": {
+    "configuracion": {
+      "formato": "tabla",
+      "periodo": "mes-actual",
+      "agrupacion": "plan"
+    },
+    "filas": [
+      {
+        "plan_id": 1,
+        "plan_nombre": "Plan Standard",
+        "plan_precio": "29.90",
+        "plan_frecuencia": "mensual",
+        "plan_cant_usuarios": 1,
+        "total_transacciones": 1,
+        "pagos_aprobados": 1,
+        "pagos_pendientes": 0,
+        "pagos_rechazados": 0,
+        "ingresos_aprobados": "29.90",
+        "ingresos_pendientes": "0.00",
+        "tasa_aprobacion": "100.00",
+        "ticket_promedio": "29.90"
+      }
+    ],
+    "metadatos_tabla": {
+      "headers": [
+        { "key": "plan_nombre", "label": "Plan", "tipo": "string" },
+        { "key": "plan_precio", "label": "Precio", "tipo": "currency" },
+        { "key": "plan_frecuencia", "label": "Frecuencia", "tipo": "string" },
+        { "key": "total_transacciones", "label": "Total Trans.", "tipo": "number" },
+        { "key": "pagos_aprobados", "label": "Aprobados", "tipo": "number" },
+        { "key": "ingresos_aprobados", "label": "Ingresos", "tipo": "currency" },
+        { "key": "tasa_aprobacion", "label": "Tasa Aprob. %", "tipo": "percentage" },
+        { "key": "ticket_promedio", "label": "Ticket Prom.", "tipo": "currency" }
+      ]
+    }
+  }
+}
+```
+
+#### Parámetros del Reporte de Transacciones:
+
+| Parámetro | Tipo | Descripción |
+|-----------|------|-------------|
+| `limite` | integer | Número máximo de transacciones a devolver (por defecto: 10) |
+
+#### Ejemplo de Uso del Reporte de Transacciones:
+
+```bash
+# Listado básico de transacciones (últimas 10)
+GET /api/reportes/transacciones
+
+# Listado de las últimas 50 transacciones
+GET /api/reportes/transacciones?limite=50
+```
+
+#### Respuesta del Reporte de Transacciones:
+```json
+{
+  "success": true,
+  "data": {
+    "transacciones": [
+      {
+        "pago_id": 2,
+        "usuario_id": 1,
+        "plan_id": 1,
+        "plan_nombre": "Plan Standard",
+        "monto": "29.90",
+        "estado": "approved",
+        "metodo_pago": "tarjeta_credito",
+        "fecha_pago": "2025-08-02"
+      },
+      {
+        "pago_id": 1,
+        "usuario_id": 1,
+        "plan_id": 1,
+        "plan_nombre": "Plan Standard",
+        "monto": "29.90",
+        "estado": "approved",
+        "metodo_pago": "manual",
+        "fecha_pago": "2025-07-29"
+      }
+    ],
+    "total_transacciones": 2,
+    "headers_excel": [
+      "ID Pago", "Usuario ID", "Plan", "Monto", "Estado", "Método Pago", "Fecha"
+    ],
+    "fecha_generacion": "2025-08-03T23:45:24.399Z"
+  }
+}
+```
+
+#### Ejemplo de Uso del Reporte de Rendimiento de Planes:
+
+```bash
+# Análisis completo de rendimiento de todos los planes
+GET /api/reportes/rendimiento-planes
+```
+
+#### Respuesta del Reporte de Rendimiento de Planes:
+```json
+{
+  "success": true,
+  "data": {
+    "planes_rendimiento": [
+      {
+        "plan_id": 1,
+        "plan_nombre": "Plan Standard",
+        "plan_precio": "29.90",
+        "plan_frecuencia": "mensual",
+        "plan_cant_usuarios": 1,
+        "total_intentos_pago": 2,
+        "pagos_exitosos": 2,
+        "pagos_pendientes": 0,
+        "pagos_fallidos": 0,
+        "tasa_conversion": "100.00",
+        "tasa_rechazo": "0.00",
+        "ingresos_totales": "59.80",
+        "ticket_promedio": "29.90",
+        "ingresos_en_riesgo": "0.00",
+        "primera_venta": "2025-07-29T06:59:33.000Z",
+        "ultima_venta": "2025-08-02T20:55:41.000Z",
+        "dias_con_ventas": 2,
+        "usuarios_unicos": 1,
+        "ventas_temporada_alta": 0,
+        "ventas_temporada_baja": 2,
+        "ingresos_por_dia": 9.97,
+        "frecuencia_venta": 3,
+        "valor_por_usuario": 59.8
+      },
+      {
+        "plan_id": 2,
+        "plan_nombre": "Plan Business",
+        "plan_precio": "59.90",
+        "plan_frecuencia": "mensual",
+        "plan_cant_usuarios": 10,
+        "total_intentos_pago": 0,
+        "pagos_exitosos": 0,
+        "pagos_pendientes": 0,
+        "pagos_fallidos": 0,
+        "tasa_conversion": null,
+        "tasa_rechazo": null,
+        "ingresos_totales": "0.00",
+        "ticket_promedio": null,
+        "ingresos_en_riesgo": "0.00",
+        "primera_venta": null,
+        "ultima_venta": null,
+        "dias_con_ventas": 0,
+        "usuarios_unicos": 0,
+        "ventas_temporada_alta": 0,
+        "ventas_temporada_baja": 0,
+        "ingresos_por_dia": 0,
+        "frecuencia_venta": 0,
+        "valor_por_usuario": 0
+      }
+    ],
+    "resumen_general": {
+      "total_planes_activos": 1,
+      "plan_mejor_conversion": {
+        "plan_nombre": "Plan Standard",
+        "tasa_conversion": "100.00"
+      },
+      "plan_mas_rentable": {
+        "plan_nombre": "Plan Standard",
+        "ingresos_totales": "59.80"
+      }
+    },
+    "headers_tabla": [
+      "Plan", "Precio", "Frecuencia", "Total Intentos", "Pagos Exitosos",
+      "Tasa Conversión %", "Ingresos Totales", "Ticket Promedio", 
+      "Usuarios Únicos", "Ingresos/Día", "Valor/Usuario"
+    ],
+    "fecha_generacion": "2025-08-03T23:45:24.399Z"
+  }
+}
+```
+
 #### Respuesta Ingresos por Mes:
 ```json
 {
@@ -386,6 +657,51 @@ GET /api/estadisticas/ingresos/rango?fecha_inicio=2025-07-01&fecha_fin=2025-07-3
 
 ## 📋 Changelog API
 
+### v1.3.0 - Sistema Completo de Reportes (2025-08-03)
+
+#### ✅ Nuevas Funcionalidades:
+- **📊 Endpoints de reportes formateados** para tablas y exportación
+- **🎯 Múltiples agrupaciones**: fecha, plan, estado, mes
+- **📅 Períodos configurables**: mes actual, trimestres, anual, personalizado
+- **🏷️ Metadatos de tabla** con headers y tipos de datos
+- **📤 Headers para Excel/CSV** preconfigurados
+
+#### 🆕 Endpoints Agregados:
+- **`GET /api/reportes/ingresos`**: Reporte configurable de ingresos
+  - Parámetros: formato, período, agrupación, filtros
+  - Respuesta: datos + metadatos de tabla + resumen
+- **`GET /api/reportes/transacciones`**: Listado detallado para exportación
+  - Parámetros: límite de registros
+  - Respuesta: transacciones + headers Excel
+- **`GET /api/reportes/rendimiento-planes`**: Análisis de performance
+  - Sin parámetros requeridos
+  - Respuesta: métricas completas + resumen ejecutivo
+
+#### 🎨 Características Clave:
+- **Metadatos de tabla**: Headers con tipos (currency, date, number, percentage)
+- **Agrupaciones flexibles**: Por fecha, plan, estado o mes
+- **Períodos dinámicos**: Desde mes actual hasta rangos personalizados
+- **Métricas calculadas**: Tasa conversión, ingresos por día, valor por usuario
+- **Headers Excel**: Preparados para exportación directa
+
+#### 📊 Ejemplos de Uso:
+```bash
+# Dashboard ejecutivo
+GET /api/reportes/ingresos?agrupacion=mes&periodo=anual
+
+# Exportación contable
+GET /api/reportes/transacciones?limite=1000
+
+# Análisis de producto
+GET /api/reportes/rendimiento-planes
+```
+
+#### 🔧 Archivos Creados/Modificados:
+- `controllers/reportes.controller.js` - Lógica de reportes
+- `routes/reportes.js` - Rutas de reportes
+- `server.js` - Registro de nuevas rutas
+- `API_DOCS.md` - Documentación completa con ejemplos
+
 ### v1.2.0 - Límites de Usuarios en Planes (2025-08-03)
 
 #### ✅ Nuevas Funcionalidades:
@@ -601,11 +917,14 @@ Proporciona métricas avanzadas de rendimiento para cada plan, ideales para aná
 
 #### Para Dashboards Ejecutivos:
 ```bash
-# Vista general mensual
+# Vista general mensual con métricas clave
 GET /api/reportes/ingresos?agrupacion=mes&periodo=ultimos-6-meses
 
-# Rendimiento de planes
+# Análisis de rendimiento de todos los planes
 GET /api/reportes/rendimiento-planes
+
+# Resumen de ingresos por plan del mes actual
+GET /api/reportes/ingresos?agrupacion=plan&periodo=mes-actual
 ```
 
 #### Para Análisis Financiero:
@@ -613,26 +932,101 @@ GET /api/reportes/rendimiento-planes
 # Ingresos diarios del último trimestre
 GET /api/reportes/ingresos?agrupacion=fecha&periodo=ultimos-3-meses
 
-# Transacciones para auditoría
-GET /api/reportes/transacciones?fecha_inicio=2025-07-01&fecha_fin=2025-07-31
+# Comparación de planes por rentabilidad
+GET /api/reportes/ingresos?agrupacion=plan&periodo=anual
+
+# Análisis de pagos rechazados
+GET /api/reportes/ingresos?agrupacion=fecha&estado=rejected&periodo=ultimos-6-meses
 ```
 
 #### Para Exportación a Excel/CSV:
 ```bash
-# Datos con headers preparados para Excel
-GET /api/reportes/transacciones?limite=5000
+# Transacciones detalladas para auditoría (últimas 1000)
+GET /api/reportes/transacciones?limite=1000
 
-# Reporte de planes con métricas completas
+# Datos de rendimiento por plan para análisis de producto
 GET /api/reportes/rendimiento-planes
+
+# Reporte completo por fechas para contabilidad
+GET /api/reportes/ingresos?agrupacion=fecha&periodo=personalizado&fecha_inicio=2025-01-01&fecha_fin=2025-12-31
+```
+
+#### Para Análisis de Temporadas:
+```bash
+# Comparar ingresos por mes para identificar tendencias
+GET /api/reportes/ingresos?agrupacion=mes&periodo=anual
+
+# Rendimiento de planes para identificar estacionalidad
+GET /api/reportes/rendimiento-planes
+
+# Análisis de un período específico (ej: campaña navideña)
+GET /api/reportes/ingresos?agrupacion=fecha&periodo=personalizado&fecha_inicio=2025-12-01&fecha_fin=2025-12-31
+```
+
+### 🔧 Tips de Implementación Frontend
+
+#### Para Tablas Dinámicas:
+```javascript
+// Usar metadatos_tabla para generar columnas automáticamente
+const response = await fetch('/api/reportes/ingresos?formato=tabla');
+const data = await response.json();
+
+// Headers dinámicos
+const columns = data.data.metadatos_tabla.headers.map(header => ({
+  key: header.key,
+  title: header.label,
+  dataType: header.tipo, // 'currency', 'date', 'number', etc.
+}));
+
+// Datos listos para tabla
+const rows = data.data.filas;
+```
+
+#### Para Exportación Excel:
+```javascript
+// Headers preparados para Excel
+const response = await fetch('/api/reportes/transacciones?limite=5000');
+const data = await response.json();
+
+const excelHeaders = data.data.headers_excel; // Array de strings
+const excelData = data.data.transacciones;    // Array de objetos
+```
+
+#### Para Gráficos:
+```javascript
+// Datos por mes para gráfico de línea temporal
+const response = await fetch('/api/reportes/ingresos?agrupacion=mes&periodo=anual');
+const data = await response.json();
+
+const chartData = data.data.filas.map(item => ({
+  x: `${item.nombre_mes} ${item.año}`,
+  y: parseFloat(item.ingresos_aprobados)
+}));
 ```
 
 ### 🆚 Diferencias: Estadísticas vs Reportes
 
 | Aspecto | Estadísticas (`/estadisticas`) | Reportes (`/reportes`) |
 |---------|--------------------------------|------------------------|
-| **Propósito** | Análisis y dashboards | Tablas y exportación |
-| **Formato** | Datos agregados y resúmenes | Filas estructuradas |
-| **Filtros** | Limitados y predefinidos | Altamente configurables |
-| **Salida** | JSON para gráficos | Preparado para Excel/CSV |
-| **Metadatos** | Contexto analítico | Headers de tabla |
-| **Rendimiento** | Optimizado para velocidad | Optimizado para detalle |
+| **Propósito** | Análisis y dashboards en tiempo real | Tablas estructuradas y exportación |
+| **Formato** | Datos agregados con contexto analítico | Filas tabulares con metadatos |
+| **Filtros** | Limitados y predefinidos | Altamente configurables (período, agrupación, filtros) |
+| **Salida** | JSON optimizado para gráficos | JSON preparado para Excel/CSV/Tablas |
+| **Metadatos** | Contexto analítico y comparativas | Headers de tabla con tipos de datos |
+| **Rendimiento** | Optimizado para velocidad | Optimizado para detalle y exportación |
+| **Agrupaciones** | Fijas por endpoint | Dinámicas via parámetros |
+| **Uso típico** | Charts, KPIs, métricas rápidas | Reportes ejecutivos, auditorías, Excel |
+
+#### 💡 Cuándo usar cada uno:
+
+**Usa `/estadisticas`** para:
+- 📈 Gráficos y visualizaciones
+- ⚡ Métricas rápidas en dashboards
+- 🔍 Análisis comparativos predefinidos
+- 📊 KPIs en tiempo real
+
+**Usa `/reportes`** para:
+- 📋 Tablas dinámicas en frontend
+- 📤 Exportación a Excel/CSV
+- 📄 Reportes ejecutivos detallados
+- 🔧 Análisis configurables por usuario
