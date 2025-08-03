@@ -23,12 +23,12 @@ async function generarPreferencia(req, res) {
     ],
     external_reference: String(usuario_id),
     back_urls: {
-      success: 'https://tuapp.com/success',
-      failure: 'https://tuapp.com/failure',
-      pending: 'https://tuapp.com/pending'
+      success: process.env.SUCCESS_URL || 'https://tuapp.com/success',
+      failure: process.env.FAILURE_URL || 'https://tuapp.com/failure',
+      pending: process.env.PENDING_URL || 'https://tuapp.com/pending'
     },
     auto_return: 'approved',
-    notification_url: 'http://34.173.216.37:3000/api/webhook',
+    notification_url: process.env.WEBHOOK_NOTIFICATION_URL || 'http://34.173.216.37:3000/api/webhook',
     metadata: {
       plan_id,          // 👈 Aquí va el plan_id real
       usuario_id        // (opcional) también puedes duplicarlo aquí

@@ -2,6 +2,13 @@
 CREATE DATABASE IF NOT EXISTS bd_cx_ms_pagos DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE bd_cx_ms_pagos;
 
+-- Verificar versión de MySQL para compatibilidad con JSON
+SET @mysql_version = CAST(SUBSTRING_INDEX(VERSION(), '.', 2) AS DECIMAL(3,1));
+SELECT CASE 
+  WHEN @mysql_version >= 5.7 THEN 'MySQL version compatible with JSON functions'
+  ELSE 'WARNING: MySQL version may not support JSON functions'
+END as version_check;
+
 -- Tabla: planes
 CREATE TABLE IF NOT EXISTS planes (
   id INT AUTO_INCREMENT PRIMARY KEY,
@@ -80,11 +87,38 @@ CREATE TABLE IF NOT EXISTS suscripciones (
   INDEX idx_usuario_id (usuario_id),
   INDEX idx_estado (estado),
   INDEX idx_fecha_fin (fecha_fin),
-  UNIQUE KEY unique_usuario_activa (usuario_id, estado),
   FOREIGN KEY (plan_id) REFERENCES planes(id) ON DELETE RESTRICT,
   
   CONSTRAINT check_fechas CHECK (fecha_fin > fecha_inicio)
 );
+
+-- Agregar índice único para una sola suscripción activa por usuario
+-- Para MySQL 8.0+: CREATE UNIQUE INDEX idx_usuario_activa ON suscripciones (usuario_id) WHERE estado = 'activa';
+-- Para compatibilidad con versiones anteriores, usar un trigger:
+
+DELIMITER $$
+CREATE TRIGGER tr_check_suscripcion_activa_unica
+  BEFORE INSERT ON suscripciones
+  FOR EACH ROW
+BEGIN
+  IF NEW.estado = 'activa' THEN
+    IF EXISTS (SELECT 1 FROM suscripciones WHERE usuario_id = NEW.usuario_id AND estado = 'activa') THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario ya tiene una suscripción activa';
+    END IF;
+  END IF;
+END$$
+
+CREATE TRIGGER tr_check_suscripcion_activa_unica_update
+  BEFORE UPDATE ON suscripciones
+  FOR EACH ROW
+BEGIN
+  IF NEW.estado = 'activa' AND OLD.estado != 'activa' THEN
+    IF EXISTS (SELECT 1 FROM suscripciones WHERE usuario_id = NEW.usuario_id AND estado = 'activa' AND id != NEW.id) THEN
+      SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El usuario ya tiene una suscripción activa';
+    END IF;
+  END IF;
+END$$
+DELIMITER ;
 
 -- Vistas útiles
 CREATE OR REPLACE VIEW vista_suscripciones_activas AS
