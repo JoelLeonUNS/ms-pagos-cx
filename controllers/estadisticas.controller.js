@@ -6,24 +6,32 @@ class EstadisticasController {
     try {
       const [rows] = await db.execute(`
         SELECT 
-          YEAR(p.created_at) as año,
-          MONTH(p.created_at) as mes,
-          MONTHNAME(p.created_at) as nombre_mes,
+          YEAR(p.fecha_pago) as año,
+          MONTH(p.fecha_pago) as mes,
           COUNT(p.id) as total_pagos,
           SUM(p.monto) as ingresos_totales,
           AVG(p.monto) as ingreso_promedio
         FROM pagos p
         WHERE p.estado = 'approved' 
-          AND p.created_at >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        GROUP BY YEAR(p.created_at), MONTH(p.created_at)
+          AND p.fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
+        GROUP BY YEAR(p.fecha_pago), MONTH(p.fecha_pago)
         ORDER BY año DESC, mes DESC
       `);
+
+      // Agregar nombres de meses en JavaScript
+      const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      
+      const rowsConNombres = rows.map(row => ({
+        ...row,
+        nombre_mes: meses[row.mes]
+      }));
 
       res.json({
         success: true,
         data: {
-          ingresos_por_mes: rows,
-          total_meses: rows.length
+          ingresos_por_mes: rowsConNombres,
+          total_meses: rowsConNombres.length
         }
       });
     } catch (error) {
@@ -42,7 +50,6 @@ class EstadisticasController {
         SELECT 
           YEAR(CURDATE()) as año,
           MONTH(CURDATE()) as mes,
-          MONTHNAME(CURDATE()) as nombre_mes,
           COUNT(p.id) as total_pagos,
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos_aprobados,
           SUM(CASE WHEN p.estado = 'pending' THEN p.monto ELSE 0 END) as ingresos_pendientes,
@@ -51,9 +58,29 @@ class EstadisticasController {
           COUNT(CASE WHEN p.estado = 'pending' THEN 1 END) as pagos_pendientes,
           COUNT(CASE WHEN p.estado = 'rejected' THEN 1 END) as pagos_rechazados
         FROM pagos p
-        WHERE YEAR(p.created_at) = YEAR(CURDATE()) 
-          AND MONTH(p.created_at) = MONTH(CURDATE())
+        WHERE YEAR(p.fecha_pago) = YEAR(CURDATE()) 
+          AND MONTH(p.fecha_pago) = MONTH(CURDATE())
       `);
+
+      // Agregar nombre del mes
+      const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      
+      const resumenMesActual = rows[0] ? {
+        ...rows[0],
+        nombre_mes: meses[rows[0].mes]
+      } : {
+        año: new Date().getFullYear(),
+        mes: new Date().getMonth() + 1,
+        nombre_mes: meses[new Date().getMonth() + 1],
+        total_pagos: 0,
+        ingresos_aprobados: 0,
+        ingresos_pendientes: 0,
+        ingresos_rechazados: 0,
+        pagos_aprobados: 0,
+        pagos_pendientes: 0,
+        pagos_rechazados: 0
+      };
 
       // Obtener también los ingresos por plan del mes actual
       const [ingresosPorPlan] = await db.execute(`
@@ -64,8 +91,8 @@ class EstadisticasController {
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos_plan
         FROM pagos p
         INNER JOIN planes pl ON p.plan_id = pl.id
-        WHERE YEAR(p.created_at) = YEAR(CURDATE()) 
-          AND MONTH(p.created_at) = MONTH(CURDATE())
+        WHERE YEAR(p.fecha_pago) = YEAR(CURDATE()) 
+          AND MONTH(p.fecha_pago) = MONTH(CURDATE())
         GROUP BY pl.id, pl.nombre, pl.precio
         ORDER BY ingresos_plan DESC
       `);
@@ -73,18 +100,7 @@ class EstadisticasController {
       res.json({
         success: true,
         data: {
-          resumen_mes_actual: rows[0] || {
-            año: new Date().getFullYear(),
-            mes: new Date().getMonth() + 1,
-            nombre_mes: new Date().toLocaleString('es-ES', { month: 'long' }),
-            total_pagos: 0,
-            ingresos_aprobados: 0,
-            ingresos_pendientes: 0,
-            ingresos_rechazados: 0,
-            pagos_aprobados: 0,
-            pagos_pendientes: 0,
-            pagos_rechazados: 0
-          },
+          resumen_mes_actual: resumenMesActual,
           ingresos_por_plan: ingresosPorPlan
         }
       });
@@ -117,8 +133,8 @@ class EstadisticasController {
           COUNT(p.id) as total_pagos,
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos
         FROM pagos p
-        WHERE YEAR(p.created_at) = YEAR(CURDATE()) 
-          AND MONTH(p.created_at) = MONTH(CURDATE())
+        WHERE YEAR(p.fecha_pago) = YEAR(CURDATE()) 
+          AND MONTH(p.fecha_pago) = MONTH(CURDATE())
         
         UNION ALL
         
@@ -127,8 +143,8 @@ class EstadisticasController {
           COUNT(p.id) as total_pagos,
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos
         FROM pagos p
-        WHERE YEAR(p.created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-          AND MONTH(p.created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+        WHERE YEAR(p.fecha_pago) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+          AND MONTH(p.fecha_pago) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
       `);
 
       // Calcular crecimiento
@@ -194,14 +210,14 @@ class EstadisticasController {
 
       const [rows] = await db.execute(`
         SELECT 
-          DATE(p.created_at) as fecha,
+          DATE(p.fecha_pago) as fecha,
           COUNT(p.id) as total_pagos,
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos_aprobados,
           SUM(CASE WHEN p.estado = 'pending' THEN p.monto ELSE 0 END) as ingresos_pendientes,
           COUNT(CASE WHEN p.estado = 'approved' THEN 1 END) as pagos_aprobados
         FROM pagos p
-        WHERE DATE(p.created_at) >= ? AND DATE(p.created_at) <= ?
-        GROUP BY DATE(p.created_at)
+        WHERE DATE(p.fecha_pago) >= ? AND DATE(p.fecha_pago) <= ?
+        GROUP BY DATE(p.fecha_pago)
         ORDER BY fecha DESC
       `, [fecha_inicio, fecha_fin]);
 
@@ -212,7 +228,7 @@ class EstadisticasController {
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos_totales_periodo,
           AVG(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingreso_promedio_periodo
         FROM pagos p
-        WHERE DATE(p.created_at) >= ? AND DATE(p.created_at) <= ?
+        WHERE DATE(p.fecha_pago) >= ? AND DATE(p.fecha_pago) <= ?
       `, [fecha_inicio, fecha_fin]);
 
       res.json({
@@ -252,8 +268,8 @@ class EstadisticasController {
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos_totales,
           SUM(CASE WHEN p.estado = 'pending' THEN p.monto ELSE 0 END) as ingresos_pendientes,
           AVG(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingreso_promedio,
-          MIN(p.created_at) as primer_venta,
-          MAX(p.created_at) as ultima_venta
+          MIN(p.fecha_pago) as primer_venta,
+          MAX(p.fecha_pago) as ultima_venta
         FROM planes pl
         LEFT JOIN pagos p ON pl.id = p.plan_id
         GROUP BY pl.id, pl.nombre, pl.precio, pl.frecuencia
@@ -264,19 +280,27 @@ class EstadisticasController {
       const [ingresosMensuales] = await db.execute(`
         SELECT 
           pl.nombre as plan_nombre,
-          YEAR(p.created_at) as año,
-          MONTH(p.created_at) as mes,
-          MONTHNAME(p.created_at) as nombre_mes,
+          YEAR(p.fecha_pago) as año,
+          MONTH(p.fecha_pago) as mes,
           COUNT(CASE WHEN p.estado = 'approved' THEN 1 END) as ventas,
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos
         FROM planes pl
         LEFT JOIN pagos p ON pl.id = p.plan_id
-        WHERE p.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-          OR p.created_at IS NULL
-        GROUP BY pl.id, pl.nombre, YEAR(p.created_at), MONTH(p.created_at)
+        WHERE p.fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+          OR p.fecha_pago IS NULL
+        GROUP BY pl.id, pl.nombre, YEAR(p.fecha_pago), MONTH(p.fecha_pago)
         HAVING ventas > 0
         ORDER BY pl.nombre, año DESC, mes DESC
       `);
+
+      // Agregar nombres de meses
+      const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      
+      const ingresosMensualesConNombres = ingresosMensuales.map(row => ({
+        ...row,
+        nombre_mes: meses[row.mes]
+      }));
 
       // Comparación de planes en el mes actual vs anterior
       const [comparacionPlanes] = await db.execute(`
@@ -287,8 +311,8 @@ class EstadisticasController {
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos
         FROM planes pl
         LEFT JOIN pagos p ON pl.id = p.plan_id
-        WHERE YEAR(p.created_at) = YEAR(CURDATE()) 
-          AND MONTH(p.created_at) = MONTH(CURDATE())
+        WHERE YEAR(p.fecha_pago) = YEAR(CURDATE()) 
+          AND MONTH(p.fecha_pago) = MONTH(CURDATE())
         GROUP BY pl.id, pl.nombre
         
         UNION ALL
@@ -300,8 +324,8 @@ class EstadisticasController {
           SUM(CASE WHEN p.estado = 'approved' THEN p.monto ELSE 0 END) as ingresos
         FROM planes pl
         LEFT JOIN pagos p ON pl.id = p.plan_id
-        WHERE YEAR(p.created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-          AND MONTH(p.created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+        WHERE YEAR(p.fecha_pago) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+          AND MONTH(p.fecha_pago) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
         GROUP BY pl.id, pl.nombre
         ORDER BY plan_nombre, periodo DESC
       `);
@@ -356,7 +380,7 @@ class EstadisticasController {
             plan_mas_vendido: planMasVendido
           },
           estadisticas_por_plan: estadisticasPlanes,
-          ingresos_mensuales_por_plan: ingresosMensuales,
+          ingresos_mensuales_por_plan: ingresosMensualesConNombres,
           comparacion_mensual: crecimientoPorPlan,
           fecha_consulta: new Date().toISOString()
         }
