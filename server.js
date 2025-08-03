@@ -30,6 +30,10 @@ app.use('/api', webhookRoutes);
 const estadisticasRoutes = require('./routes/estadisticas');
 app.use('/api', estadisticasRoutes);
 
+// Rutas de reportes
+const reportesRoutes = require('./routes/reportes');
+app.use('/api', reportesRoutes);
+
 // Ruta de health check
 app.get('/health', (req, res) => {
   res.json({ 
@@ -74,6 +78,8 @@ app.get('/api/routes', (req, res) => {
     if (path.includes('/suscripciones')) return 'Gestión de suscripciones';
     if (path.includes('/mercadopago')) return 'Integración con MercadoPago';
     if (path.includes('/webhook')) return 'Manejo de webhooks';
+    if (path.includes('/estadisticas')) return 'Estadísticas de ingresos';
+    if (path.includes('/reportes')) return 'Reportes formateados para tablas/exportación';
     return 'Endpoint de la API';
   }
 
@@ -99,6 +105,8 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('- CRUD /api/suscripciones - Gestión de suscripciones');
   console.log('- /api/mercadopago - Integración MercadoPago');
   console.log('- /api/webhook - Webhooks');
+  console.log('- /api/estadisticas - Estadísticas de ingresos');
+  console.log('- /api/reportes - Reportes formateados para tablas/exportación');
   
   // Iniciar trabajos programados
   CronJobs.iniciarCronJobs();

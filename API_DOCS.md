@@ -92,6 +92,12 @@
 - **GET** `/api/estadisticas/ingresos/por-planes` - Estadísticas detalladas por cada plan
 - **GET** `/api/estadisticas/ingresos/rango?fecha_inicio=YYYY-MM-DD&fecha_fin=YYYY-MM-DD` - Ingresos por rango de fechas
 
+### Reportes Formateados
+
+- **GET** `/api/reportes/ingresos` - Reporte de ingresos formateado para tablas/exportación
+- **GET** `/api/reportes/transacciones` - Listado detallado de transacciones para exportar
+- **GET** `/api/reportes/rendimiento-planes` - Análisis de rendimiento por planes
+
 #### Respuesta Ingresos por Mes:
 ```json
 {
@@ -444,3 +450,189 @@ Para cambiar la configuración de renovación automática, usar únicamente:
 PATCH /api/suscripciones/:id/renovacion-automatica
 ```
 Con el body apropiado para activar (`true`) o desactivar (`false`).
+
+## 📊 Nuevos Endpoints de Reportes (v1.3.0)
+
+### Reportes Formateados para Tablas/Exportación
+
+Los nuevos endpoints de reportes están diseñados específicamente para generar datos formateados que puedan ser utilizados directamente en tablas, exportaciones a Excel/CSV o análisis detallados.
+
+#### 🎯 Reporte de Ingresos Configurable
+
+**GET** `/api/reportes/ingresos`
+
+##### Parámetros Query:
+- **formato**: `tabla` | `resumen` | `detallado` (por defecto: `tabla`)
+- **periodo**: `mes-actual` | `ultimos-3-meses` | `ultimos-6-meses` | `anual` | `personalizado`
+- **agrupacion**: `fecha` | `plan` | `estado` | `mes`
+- **fecha_inicio** y **fecha_fin**: Para período personalizado (formato: YYYY-MM-DD)
+- **plan_id**: Filtrar por plan específico
+- **estado**: Filtrar por estado (`pending`, `approved`, `rejected`)
+
+##### Ejemplo de Uso:
+```bash
+# Reporte por fecha del mes actual
+GET /api/reportes/ingresos?formato=tabla&periodo=mes-actual&agrupacion=fecha
+
+# Reporte por planes con rango personalizado
+GET /api/reportes/ingresos?agrupacion=plan&periodo=personalizado&fecha_inicio=2025-07-01&fecha_fin=2025-07-31
+
+# Reporte mensual de todo el año
+GET /api/reportes/ingresos?agrupacion=mes&periodo=anual
+```
+
+##### Respuesta de Ejemplo:
+```json
+{
+  "success": true,
+  "data": {
+    "configuracion": {
+      "formato": "tabla",
+      "periodo": "mes-actual",
+      "agrupacion": "fecha"
+    },
+    "resumen_periodo": {
+      "total_transacciones_periodo": 156,
+      "total_pagos_aprobados": 142,
+      "ingresos_totales_periodo": 4248.50,
+      "ticket_promedio_periodo": 29.90
+    },
+    "filas": [
+      {
+        "fecha": "2025-08-03",
+        "dia_semana": "Sunday",
+        "total_transacciones": 12,
+        "pagos_aprobados": 11,
+        "ingresos_aprobados": 328.90,
+        "ticket_promedio": 29.90
+      }
+    ],
+    "metadatos_tabla": {
+      "headers": [
+        { "key": "fecha", "label": "Fecha", "tipo": "date" },
+        { "key": "total_transacciones", "label": "Total Trans.", "tipo": "number" },
+        { "key": "ingresos_aprobados", "label": "Ingresos", "tipo": "currency" }
+      ],
+      "tipos_dato": ["string", "number", "currency", "date", "percentage"]
+    }
+  }
+}
+```
+
+#### 📋 Listado Detallado de Transacciones
+
+**GET** `/api/reportes/transacciones`
+
+##### Parámetros Query:
+- **fecha_inicio** y **fecha_fin**: Rango de fechas (YYYY-MM-DD)
+- **plan_id**: Filtrar por plan específico
+- **estado**: Filtrar por estado de pago
+- **usuario_id**: Filtrar por usuario específico
+- **limite**: Límite de resultados (por defecto: 1000)
+
+##### Ejemplo de Uso:
+```bash
+# Todas las transacciones de julio 2025
+GET /api/reportes/transacciones?fecha_inicio=2025-07-01&fecha_fin=2025-07-31
+
+# Transacciones aprobadas de un plan específico
+GET /api/reportes/transacciones?plan_id=1&estado=approved&limite=500
+```
+
+##### Respuesta:
+```json
+{
+  "success": true,
+  "data": {
+    "transacciones": [
+      {
+        "pago_id": 123,
+        "usuario_id": 45,
+        "plan_nombre": "Plan Standard",
+        "monto": 29.90,
+        "estado": "approved",
+        "fecha_pago": "2025-08-03",
+        "hora_pago": "14:30:00",
+        "dia_semana": "Sunday"
+      }
+    ],
+    "headers_excel": [
+      "ID Pago", "Usuario ID", "Plan", "Monto", "Estado", 
+      "Fecha Pago", "Hora", "Día Semana"
+    ]
+  }
+}
+```
+
+#### 📈 Análisis de Rendimiento por Planes
+
+**GET** `/api/reportes/rendimiento-planes`
+
+Proporciona métricas avanzadas de rendimiento para cada plan, ideales para análisis de producto y toma de decisiones estratégicas.
+
+##### Respuesta:
+```json
+{
+  "success": true,
+  "data": {
+    "planes_rendimiento": [
+      {
+        "plan_nombre": "Plan Standard",
+        "total_intentos_pago": 200,
+        "pagos_exitosos": 185,
+        "tasa_conversion": 92.50,
+        "tasa_rechazo": 7.50,
+        "ingresos_totales": 5531.50,
+        "ticket_promedio": 29.90,
+        "usuarios_unicos": 185,
+        "ingresos_por_dia": 42.55,
+        "valor_por_usuario": 29.90
+      }
+    ],
+    "resumen_general": {
+      "plan_mejor_conversion": { "plan_nombre": "Plan Premium", "tasa_conversion": 95.2 },
+      "plan_mas_rentable": { "plan_nombre": "Plan Enterprise", "ingresos_totales": 15000 }
+    }
+  }
+}
+```
+
+### 🎨 Casos de Uso para los Reportes
+
+#### Para Dashboards Ejecutivos:
+```bash
+# Vista general mensual
+GET /api/reportes/ingresos?agrupacion=mes&periodo=ultimos-6-meses
+
+# Rendimiento de planes
+GET /api/reportes/rendimiento-planes
+```
+
+#### Para Análisis Financiero:
+```bash
+# Ingresos diarios del último trimestre
+GET /api/reportes/ingresos?agrupacion=fecha&periodo=ultimos-3-meses
+
+# Transacciones para auditoría
+GET /api/reportes/transacciones?fecha_inicio=2025-07-01&fecha_fin=2025-07-31
+```
+
+#### Para Exportación a Excel/CSV:
+```bash
+# Datos con headers preparados para Excel
+GET /api/reportes/transacciones?limite=5000
+
+# Reporte de planes con métricas completas
+GET /api/reportes/rendimiento-planes
+```
+
+### 🆚 Diferencias: Estadísticas vs Reportes
+
+| Aspecto | Estadísticas (`/estadisticas`) | Reportes (`/reportes`) |
+|---------|--------------------------------|------------------------|
+| **Propósito** | Análisis y dashboards | Tablas y exportación |
+| **Formato** | Datos agregados y resúmenes | Filas estructuradas |
+| **Filtros** | Limitados y predefinidos | Altamente configurables |
+| **Salida** | JSON para gráficos | Preparado para Excel/CSV |
+| **Metadatos** | Contexto analítico | Headers de tabla |
+| **Rendimiento** | Optimizado para velocidad | Optimizado para detalle |
