@@ -44,7 +44,7 @@ class PlanController {
 
   static async create(req, res) {
     try {
-      const { nombre, precio, frecuencia, descripcion, beneficios } = req.body;
+      const { nombre, precio, frecuencia, descripcion, beneficios, cant_usuarios } = req.body;
 
       // Validaciones básicas
       if (!nombre || !precio || !frecuencia) {
@@ -69,7 +69,15 @@ class PlanController {
         });
       }
 
-      const planId = await Plan.create({ nombre, precio, frecuencia, descripcion, beneficios });
+      // Validar cant_usuarios si se proporciona
+      if (cant_usuarios !== undefined && (!Number.isInteger(cant_usuarios) || cant_usuarios < -1 || cant_usuarios === 0)) {
+        return res.status(400).json({
+          success: false,
+          message: 'La cantidad de usuarios debe ser un número entero positivo o -1 (ilimitado)'
+        });
+      }
+
+      const planId = await Plan.create({ nombre, precio, frecuencia, descripcion, beneficios, cant_usuarios });
       const nuevoPlan = await Plan.getById(planId);
 
       res.status(201).json({
@@ -89,7 +97,7 @@ class PlanController {
   static async update(req, res) {
     try {
       const { id } = req.params;
-      const { nombre, precio, frecuencia, descripcion, beneficios } = req.body;
+      const { nombre, precio, frecuencia, descripcion, beneficios, cant_usuarios } = req.body;
 
       // Validaciones básicas
       if (!nombre || !precio || !frecuencia) {
@@ -114,7 +122,15 @@ class PlanController {
         });
       }
 
-      const updated = await Plan.update(id, { nombre, precio, frecuencia, descripcion, beneficios });
+      // Validar cant_usuarios si se proporciona
+      if (cant_usuarios !== undefined && (!Number.isInteger(cant_usuarios) || cant_usuarios < -1 || cant_usuarios === 0)) {
+        return res.status(400).json({
+          success: false,
+          message: 'La cantidad de usuarios debe ser un número entero positivo o -1 (ilimitado)'
+        });
+      }
+
+      const updated = await Plan.update(id, { nombre, precio, frecuencia, descripcion, beneficios, cant_usuarios });
       
       if (!updated) {
         return res.status(404).json({

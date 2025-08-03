@@ -10,30 +10,38 @@ CREATE TABLE IF NOT EXISTS planes (
   frecuencia ENUM('mensual', 'anual') NOT NULL,
   descripcion TEXT,
   beneficios JSON,
+  cant_usuarios INT DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Pre-carga de planes
-INSERT INTO planes (nombre, precio, frecuencia, descripcion, beneficios) VALUES
+INSERT INTO planes (nombre, precio, frecuencia, descripcion, beneficios, cant_usuarios) VALUES
   ('Plan Standard',   29.90, 'mensual',  'Ideal para uso básico', 
-   JSON_ARRAY('Acceso básico', 'Soporte por email', '5 proyectos', 'Almacenamiento 10GB')),
+   JSON_ARRAY('Acceso básico', 'Soporte por email', '5 proyectos', 'Almacenamiento 10GB'), 1),
   ('Plan Business',   59.90, 'mensual',  'Para pequeñas empresas', 
-   JSON_ARRAY('Acceso completo', 'Soporte prioritario', '25 proyectos', 'Almacenamiento 100GB', 'Colaboradores ilimitados')),
+   JSON_ARRAY('Acceso completo', 'Soporte prioritario', '25 proyectos', 'Almacenamiento 100GB', 'Colaboradores ilimitados'), 10),
   ('Plan Enterprise',99.90, 'mensual',  'Para organizaciones grandes', 
-   JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático'));
+   JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático'), -1);
 
--- Migración para bases de datos existentes: Agregar columna beneficios
+-- Migración para bases de datos existentes: Agregar columnas beneficios y cant_usuarios
 ALTER TABLE planes ADD COLUMN IF NOT EXISTS beneficios JSON AFTER descripcion;
+ALTER TABLE planes ADD COLUMN IF NOT EXISTS cant_usuarios INT DEFAULT 1 AFTER beneficios;
 
--- Actualizar planes existentes con beneficios por defecto (solo si no tienen beneficios)
-UPDATE planes SET beneficios = JSON_ARRAY('Acceso básico', 'Soporte por email', '5 proyectos', 'Almacenamiento 10GB') 
+-- Actualizar planes existentes con beneficios y límites por defecto (solo si no tienen beneficios)
+UPDATE planes SET 
+    beneficios = JSON_ARRAY('Acceso básico', 'Soporte por email', '5 proyectos', 'Almacenamiento 10GB'),
+    cant_usuarios = 1
 WHERE nombre = 'Plan Standard' AND (beneficios IS NULL OR JSON_LENGTH(beneficios) = 0);
 
-UPDATE planes SET beneficios = JSON_ARRAY('Acceso completo', 'Soporte prioritario', '25 proyectos', 'Almacenamiento 100GB', 'Colaboradores ilimitados') 
+UPDATE planes SET 
+    beneficios = JSON_ARRAY('Acceso completo', 'Soporte prioritario', '25 proyectos', 'Almacenamiento 100GB', 'Colaboradores ilimitados'),
+    cant_usuarios = 10
 WHERE nombre = 'Plan Business' AND (beneficios IS NULL OR JSON_LENGTH(beneficios) = 0);
 
-UPDATE planes SET beneficios = JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático') 
+UPDATE planes SET 
+    beneficios = JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático'),
+    cant_usuarios = -1
 WHERE nombre = 'Plan Enterprise' AND (beneficios IS NULL OR JSON_LENGTH(beneficios) = 0);
 
 -- Tabla: pagos
