@@ -77,6 +77,111 @@
 - **POST** `/api/mercadopago/*` - Endpoints de integración MercadoPago
 - **POST** `/api/webhook/*` - Endpoints de webhooks
 
+### Estadísticas de Ingresos
+
+- **GET** `/api/estadisticas/ingresos/por-mes` - Ingresos por mes (últimos 12 meses)
+- **GET** `/api/estadisticas/ingresos/mes-actual` - Ingresos del mes actual detallados
+- **GET** `/api/estadisticas/ingresos/generales` - Estadísticas generales y comparativas
+- **GET** `/api/estadisticas/ingresos/por-planes` - Estadísticas detalladas por cada plan
+- **GET** `/api/estadisticas/ingresos/rango?fecha_inicio=YYYY-MM-DD&fecha_fin=YYYY-MM-DD` - Ingresos por rango de fechas
+
+#### Respuesta Ingresos por Mes:
+```json
+{
+  "success": true,
+  "data": {
+    "ingresos_por_mes": [
+      {
+        "año": 2025,
+        "mes": 8,
+        "nombre_mes": "August",
+        "total_pagos": 45,
+        "ingresos_totales": 1347.50,
+        "ingreso_promedio": 29.94
+      }
+    ],
+    "total_meses": 12
+  }
+}
+```
+
+#### Respuesta Mes Actual:
+```json
+{
+  "success": true,
+  "data": {
+    "resumen_mes_actual": {
+      "año": 2025,
+      "mes": 8,
+      "nombre_mes": "August",
+      "total_pagos": 23,
+      "ingresos_aprobados": 689.70,
+      "ingresos_pendientes": 119.80,
+      "ingresos_rechazados": 59.90,
+      "pagos_aprobados": 23,
+      "pagos_pendientes": 4,
+      "pagos_rechazados": 2
+    },
+    "ingresos_por_plan": [
+      {
+        "plan_nombre": "Plan Premium",
+        "plan_precio": 99.90,
+        "total_pagos": 15,
+        "ingresos_plan": 1498.50
+      }
+    ]
+  }
+}
+```
+
+#### Respuesta Ingresos por Planes:
+```json
+{
+  "success": true,
+  "data": {
+    "resumen": {
+      "total_planes": 3,
+      "plan_mas_rentable": {
+        "plan_nombre": "Plan Premium",
+        "ingresos_totales": 2997.00,
+        "pagos_aprobados": 30
+      },
+      "plan_mas_vendido": {
+        "plan_nombre": "Plan Standard",
+        "pagos_aprobados": 45,
+        "ingresos_totales": 1346.50
+      }
+    },
+    "estadisticas_por_plan": [
+      {
+        "plan_id": 1,
+        "plan_nombre": "Plan Standard",
+        "plan_precio": 29.90,
+        "plan_frecuencia": "mensual",
+        "total_pagos": 50,
+        "pagos_aprobados": 45,
+        "pagos_pendientes": 3,
+        "pagos_rechazados": 2,
+        "ingresos_totales": 1346.50,
+        "ingresos_pendientes": 89.70,
+        "ingreso_promedio": 29.90,
+        "primer_venta": "2025-01-15T10:30:00.000Z",
+        "ultima_venta": "2025-08-02T14:22:00.000Z"
+      }
+    ],
+    "comparacion_mensual": [
+      {
+        "plan_nombre": "Plan Standard",
+        "mes_actual": { "ventas": 12, "ingresos": 358.80 },
+        "mes_anterior": { "ventas": 8, "ingresos": 239.20 },
+        "crecimiento_ventas": "50.00%",
+        "crecimiento_ingresos": "50.00%"
+      }
+    ]
+  }
+}
+```
+
 ## Estructura de Respuesta
 
 Todas las respuestas siguen el formato:
@@ -236,6 +341,24 @@ Content-Type: application/json
 {
   "renovacion_automatica": true
 }
+```
+
+### Consultar Estadísticas de Ingresos
+```bash
+# Ingresos por mes (últimos 12 meses)
+GET /api/estadisticas/ingresos/por-mes
+
+# Ingresos del mes actual
+GET /api/estadisticas/ingresos/mes-actual
+
+# Estadísticas generales con comparativas
+GET /api/estadisticas/ingresos/generales
+
+# Estadísticas detalladas por cada plan
+GET /api/estadisticas/ingresos/por-planes
+
+# Ingresos por rango de fechas específico
+GET /api/estadisticas/ingresos/rango?fecha_inicio=2025-07-01&fecha_fin=2025-07-31
 ```
 
 ## 📋 Changelog API

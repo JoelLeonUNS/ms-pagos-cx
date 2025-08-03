@@ -26,6 +26,10 @@ app.use('/api', mercadoPagoRoutes);
 const webhookRoutes = require('./routes/webhook');
 app.use('/api', webhookRoutes);
 
+// Rutas de estadísticas
+const estadisticasRoutes = require('./routes/estadisticas');
+app.use('/api', estadisticasRoutes);
+
 // Ruta de health check
 app.get('/health', (req, res) => {
   res.json({ 
