@@ -9,15 +9,32 @@ CREATE TABLE IF NOT EXISTS planes (
   precio DECIMAL(10,2) NOT NULL,
   frecuencia ENUM('mensual', 'anual') NOT NULL,
   descripcion TEXT,
+  beneficios JSON,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- Pre-carga de planes
-INSERT INTO planes (nombre, precio, frecuencia, descripcion) VALUES
-  ('Plan Standard',   29.90, 'mensual',  'Ideal para uso básico'),
-  ('Plan Business',   59.90, 'mensual',  'Para pequeñas empresas'),
-  ('Plan Enterprise',99.90, 'mensual',  'Para organizaciones grandes');
+INSERT INTO planes (nombre, precio, frecuencia, descripcion, beneficios) VALUES
+  ('Plan Standard',   29.90, 'mensual',  'Ideal para uso básico', 
+   JSON_ARRAY('Acceso básico', 'Soporte por email', '5 proyectos', 'Almacenamiento 10GB')),
+  ('Plan Business',   59.90, 'mensual',  'Para pequeñas empresas', 
+   JSON_ARRAY('Acceso completo', 'Soporte prioritario', '25 proyectos', 'Almacenamiento 100GB', 'Colaboradores ilimitados')),
+  ('Plan Enterprise',99.90, 'mensual',  'Para organizaciones grandes', 
+   JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático'));
+
+-- Migración para bases de datos existentes: Agregar columna beneficios
+ALTER TABLE planes ADD COLUMN IF NOT EXISTS beneficios JSON AFTER descripcion;
+
+-- Actualizar planes existentes con beneficios por defecto (solo si no tienen beneficios)
+UPDATE planes SET beneficios = JSON_ARRAY('Acceso básico', 'Soporte por email', '5 proyectos', 'Almacenamiento 10GB') 
+WHERE nombre = 'Plan Standard' AND (beneficios IS NULL OR JSON_LENGTH(beneficios) = 0);
+
+UPDATE planes SET beneficios = JSON_ARRAY('Acceso completo', 'Soporte prioritario', '25 proyectos', 'Almacenamiento 100GB', 'Colaboradores ilimitados') 
+WHERE nombre = 'Plan Business' AND (beneficios IS NULL OR JSON_LENGTH(beneficios) = 0);
+
+UPDATE planes SET beneficios = JSON_ARRAY('Acceso premium', 'Soporte 24/7', 'Proyectos ilimitados', 'Almacenamiento 1TB', 'API dedicada', 'Backup automático') 
+WHERE nombre = 'Plan Enterprise' AND (beneficios IS NULL OR JSON_LENGTH(beneficios) = 0);
 
 -- Tabla: pagos
 CREATE TABLE IF NOT EXISTS pagos (

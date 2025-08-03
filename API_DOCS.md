@@ -19,7 +19,13 @@
   "nombre": "Plan Standard",
   "precio": 29.90,
   "frecuencia": "mensual", // "mensual" | "anual"
-  "descripcion": "Ideal para uso básico"
+  "descripcion": "Ideal para uso básico",
+  "beneficios": [
+    "Acceso básico",
+    "Soporte por email",
+    "5 proyectos",
+    "Almacenamiento 10GB"
+  ]
 }
 ```
 
@@ -265,7 +271,15 @@ Content-Type: application/json
   "nombre": "Plan Premium",
   "precio": 99.90,
   "frecuencia": "mensual",
-  "descripcion": "Plan con todas las funcionalidades"
+  "descripcion": "Plan con todas las funcionalidades",
+  "beneficios": [
+    "Acceso premium",
+    "Soporte 24/7",
+    "Proyectos ilimitados",
+    "Almacenamiento 1TB",
+    "API dedicada",
+    "Backup automático"
+  ]
 }
 ```
 
