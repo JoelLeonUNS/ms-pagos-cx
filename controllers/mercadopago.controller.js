@@ -26,13 +26,17 @@ async function generarPreferencia(req, res) {
       failure: process.env.FAILURE_URL,
       pending: process.env.PENDING_URL
     },
-    auto_return: 'approved',
     notification_url: process.env.WEBHOOK_NOTIFICATION_URL,
     metadata: {
       plan_id,          // 👈 Aquí va el plan_id real
       usuario_id        // (opcional) también puedes duplicarlo aquí
     }
   };
+
+  // auto_return es opcional - solo se agrega si está configurado en el .env
+  if (process.env.MERCADOPAGO_AUTO_RETURN) {
+    preference.auto_return = process.env.MERCADOPAGO_AUTO_RETURN;
+  }
 
   try {
     const response = await mercadopago.preferences.create(preference);
@@ -42,7 +46,10 @@ async function generarPreferencia(req, res) {
     });
   } catch (error) {
     console.error('Error al crear preferencia:', error);
-    return res.status(500).json({ error: 'No se pudo crear la preferencia de pago' });
+    return res.status(500).json({ 
+      error: 'No se pudo crear la preferencia de pago',
+      details: error.message 
+    });
   }
 }
 
